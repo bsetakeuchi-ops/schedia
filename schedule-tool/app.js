@@ -442,7 +442,7 @@ function renderAll() {
 
 function openShareModal(url) {
   elements.modalShareUrl.value = url;
-  elements.openAnswerLink.href = url;
+  elements.openAnswerLink.setAttribute("href", url);
   elements.shareModal.hidden = false;
   elements.modalShareUrl.focus();
   elements.modalShareUrl.select();
