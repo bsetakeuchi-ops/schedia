@@ -538,6 +538,9 @@ function buildAnswerDescription() {
 }
 
 function generateSlotsFromPrompt(prompt) {
+  const explicitSlots = generateExplicitSlotsFromPrompt(prompt);
+  if (explicitSlots.length) return uniqueSlots(explicitSlots).slice(0, 80);
+
   const today = startOfDay(new Date());
   const baseMonday = getNextMonday(today);
   const dates = inferDates(prompt, today, baseMonday);
@@ -559,6 +562,73 @@ function generateSlotsFromPrompt(prompt) {
     }
   });
   return slots.slice(0, 80);
+}
+
+function generateExplicitSlotsFromPrompt(prompt) {
+  const lines = prompt
+    .split(/\n+/)
+    .map((line) => line.trim())
+    .filter(Boolean);
+  const slots = [];
+
+  lines.forEach((line) => {
+    const date = inferExplicitDate(line);
+    const range = inferMinuteRange(line);
+    if (!date || !range) return;
+
+    const step = inferStep(line) || inferDuration(line);
+    const duration = inferDuration(line);
+    for (let minutes = range.start; minutes < range.end; minutes += step) {
+      const slotDate = new Date(date);
+      slotDate.setHours(Math.floor(minutes / 60), minutes % 60, 0, 0);
+      slots.push({
+        id: crypto.randomUUID(),
+        startsAt: toLocalInputValue(slotDate),
+        duration,
+      });
+    }
+  });
+
+  return slots;
+}
+
+function inferExplicitDate(text) {
+  const normalized = normalizePromptText(text);
+  const match = normalized.match(/(?:(20\d{2})[\/年.-])?\s*(\d{1,2})\s*[\/月.-]\s*(\d{1,2})\s*日?/);
+  if (!match) return null;
+
+  const now = new Date();
+  let year = match[1] ? Number(match[1]) : now.getFullYear();
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+  let date = new Date(year, month - 1, day);
+
+  if (!match[1] && date < startOfDay(now)) {
+    date = new Date(year + 1, month - 1, day);
+  }
+
+  return startOfDay(date);
+}
+
+function inferMinuteRange(text) {
+  const normalized = normalizePromptText(text);
+  const match = normalized.match(/(\d{1,2})(?::(\d{2}))?\s*(?:時)?\s*(?:から|〜|~|-|－|ー|–|—)\s*(\d{1,2})(?::(\d{2}))?\s*(?:時)?/);
+  if (!match) return null;
+
+  const start = Number(match[1]) * 60 + Number(match[2] || 0);
+  const end = Number(match[3]) * 60 + Number(match[4] || 0);
+  if (end <= start) return null;
+
+  return { start, end };
+}
+
+function normalizePromptText(text) {
+  return text
+    .replace(/[０-９]/g, (char) => String.fromCharCode(char.charCodeAt(0) - 0xfee0))
+    .replace(/：/g, ":")
+    .replace(/[（［【].*?[）］】]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 function inferDates(prompt, today, baseMonday) {
@@ -609,7 +679,10 @@ function inferDuration(prompt) {
 
 function inferStep(prompt) {
   const match = prompt.match(/(\d{2,3})分刻み/);
-  return match ? Number(match[1]) : null;
+  if (match) return Number(match[1]);
+  const hourMatch = prompt.match(/(\d{1,2})時間刻み/);
+  if (hourMatch) return Number(hourMatch[1]) * 60;
+  return null;
 }
 
 function inferPreferredDays(prompt) {
