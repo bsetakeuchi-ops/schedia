@@ -283,6 +283,18 @@ button {
   padding: 0 14px;
 }
 
+.secondary-link {
+  display: inline-grid;
+  min-height: 42px;
+  place-items: center;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: white;
+  color: var(--ink);
+  padding: 0 14px;
+  font-weight: 800;
+}
+
 .ghost-button {
   background: transparent;
 }
@@ -471,6 +483,66 @@ th {
   font-weight: 900;
 }
 
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: grid;
+  place-items: center;
+  padding: 18px;
+  background: rgba(24, 32, 43, 0.46);
+}
+
+.share-modal {
+  position: relative;
+  display: grid;
+  width: min(560px, 100%);
+  gap: 16px;
+  padding: 26px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+  box-shadow: 0 28px 80px rgba(22, 32, 43, 0.28);
+}
+
+.share-modal h2 {
+  margin: 0;
+  font-size: 28px;
+  letter-spacing: 0;
+}
+
+.modal-copy {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.7;
+}
+
+.modal-close {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  width: 38px;
+  min-height: 38px;
+  border: 1px solid var(--line);
+  background: white;
+  color: var(--muted);
+}
+
+.modal-url-field {
+  margin-top: 4px;
+}
+
+.modal-url-field input {
+  font-size: 14px;
+}
+
+.modal-actions {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 10px;
+  align-items: center;
+}
+
 .toast {
   position: fixed;
   right: 18px;
@@ -516,7 +588,8 @@ th {
   .hero-band,
   .layout-grid,
   .option-grid,
-  .answer-card {
+  .answer-card,
+  .modal-actions {
     grid-template-columns: 1fr;
   }
 

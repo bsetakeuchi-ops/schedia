@@ -156,6 +156,23 @@
       </main>
     </div>
 
+    <div class="modal-backdrop" id="shareModal" hidden>
+      <section class="share-modal" role="dialog" aria-modal="true" aria-labelledby="shareModalTitle">
+        <button class="modal-close" id="closeShareModalButton" type="button" aria-label="閉じる">×</button>
+        <p class="eyebrow">共有リンク</p>
+        <h2 id="shareModalTitle">リンクが発行されました！</h2>
+        <p class="modal-copy">このURLを参加者に送ると、候補日時への回答を集められます。</p>
+        <label class="modal-url-field">
+          <span>参加者用URL</span>
+          <input id="modalShareUrl" readonly />
+        </label>
+        <div class="modal-actions">
+          <button type="button" class="primary-button" id="copyModalUrlButton">リンクをコピー</button>
+          <a class="secondary-link" id="openAnswerLink" href="#answer">回答ページを開く</a>
+        </div>
+      </section>
+    </div>
+
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
     <script src="./config.js"></script>
     <script src="./app.js"></script>

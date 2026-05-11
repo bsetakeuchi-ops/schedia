@@ -37,6 +37,9 @@ const elements = {
   heroSlotCount: document.querySelector("#heroSlotCount"),
   heroResponseCount: document.querySelector("#heroResponseCount"),
   heroBestSlot: document.querySelector("#heroBestSlot"),
+  shareModal: document.querySelector("#shareModal"),
+  modalShareUrl: document.querySelector("#modalShareUrl"),
+  openAnswerLink: document.querySelector("#openAnswerLink"),
 };
 
 document.querySelector("#generateSlotsButton").addEventListener("click", () => {
@@ -103,12 +106,27 @@ elements.eventForm.addEventListener("submit", async (event) => {
   showToast(savedToDatabase ? "Supabaseに保存して共有リンクを発行しました。" : "共有リンクを発行しました。");
   history.replaceState(null, "", `#results?${eventParam}`);
   loadRouteFromHash();
+  openShareModal(url);
 });
 
 document.querySelector("#copyUrlButton").addEventListener("click", async () => {
   if (!elements.shareUrl.value) return;
-  await navigator.clipboard.writeText(elements.shareUrl.value);
-  showToast("URLをコピーしました。");
+  await copyToClipboard(elements.shareUrl.value);
+});
+
+document.querySelector("#copyModalUrlButton").addEventListener("click", async () => {
+  if (!elements.modalShareUrl.value) return;
+  await copyToClipboard(elements.modalShareUrl.value);
+});
+
+document.querySelector("#closeShareModalButton").addEventListener("click", closeShareModal);
+
+elements.shareModal.addEventListener("click", (event) => {
+  if (event.target === elements.shareModal) closeShareModal();
+});
+
+document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape" && !elements.shareModal.hidden) closeShareModal();
 });
 
 elements.responseForm.addEventListener("submit", async (event) => {
@@ -420,6 +438,36 @@ function renderAll() {
   renderAnswer();
   renderResults();
   renderHero();
+}
+
+function openShareModal(url) {
+  elements.modalShareUrl.value = url;
+  elements.openAnswerLink.href = url;
+  elements.shareModal.hidden = false;
+  elements.modalShareUrl.focus();
+  elements.modalShareUrl.select();
+}
+
+function closeShareModal() {
+  elements.shareModal.hidden = true;
+}
+
+async function copyToClipboard(value) {
+  try {
+    await navigator.clipboard.writeText(value);
+    showToast("URLをコピーしました。");
+  } catch {
+    const temporaryInput = document.createElement("textarea");
+    temporaryInput.value = value;
+    temporaryInput.setAttribute("readonly", "");
+    temporaryInput.style.position = "fixed";
+    temporaryInput.style.opacity = "0";
+    document.body.appendChild(temporaryInput);
+    temporaryInput.select();
+    document.execCommand("copy");
+    temporaryInput.remove();
+    showToast("URLをコピーしました。");
+  }
 }
 
 function renderRoute() {
