@@ -47,7 +47,7 @@ window.SCHEDIA_SUPABASE = {
 
 GitHubには `schedule-tool` フォルダのアプリ本体と `supabase-schema.sql` を置きます。
 
-`config.js` は接続情報を入れるローカル設定ファイルなので、GitHubには載せません。設定例は `config.example.js` に残しています。Netlifyでは環境変数から `config.js` を自動生成します。
+`config.js` にはブラウザ公開用のSupabase Publishable keyを入れています。Secret keyやservice_role keyは絶対に入れません。
 
 おすすめの流れは以下です。
 
