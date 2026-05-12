@@ -6,10 +6,13 @@ const supabaseConfig = getSupabaseConfig();
 const state = {
   event: loadWorkingEvent(),
   activeRoute: "admin",
+  isSharedAnswerView: false,
 };
 
 const elements = {
+  heroBand: document.querySelector(".hero-band"),
   navLinks: document.querySelectorAll("[data-route]"),
+  topActions: document.querySelector(".top-actions"),
   adminView: document.querySelector("#adminView"),
   answerView: document.querySelector("#answerView"),
   resultsView: document.querySelector("#resultsView"),
@@ -43,6 +46,7 @@ const elements = {
 };
 
 document.querySelector("#generateSlotsButton").addEventListener("click", () => {
+  syncEventFromForm();
   const prompt = elements.naturalPrompt.value.trim();
   if (!prompt) {
     showToast("候補条件を入力してください。");
@@ -60,6 +64,7 @@ document.querySelector("#addManualSlotButton").addEventListener("click", () => {
 });
 
 document.querySelector("#saveManualSlotButton").addEventListener("click", () => {
+  syncEventFromForm();
   const date = elements.manualDate.value;
   const time = elements.manualTime.value;
   const duration = Number(elements.manualDuration.value || 30);
@@ -76,6 +81,7 @@ document.querySelector("#saveManualSlotButton").addEventListener("click", () => 
 });
 
 document.querySelector("#clearSlotsButton").addEventListener("click", () => {
+  syncEventFromForm();
   state.event.slots = [];
   saveWorkingEvent();
   renderAll();
@@ -86,6 +92,21 @@ document.querySelector("#loadDemoButton").addEventListener("click", () => {
   elements.eventDescription.value = "各社のご都合を確認し、最も参加しやすい日時で確定します。";
   elements.naturalPrompt.value = "来週の平日、14時から18時の間で30分刻み。火曜と木曜を優先。";
   elements.answerMode.value = "tri";
+  syncEventFromForm();
+  saveWorkingEvent();
+  renderAll();
+});
+
+["input", "change"].forEach((eventName) => {
+  [elements.eventTitle, elements.eventDescription, elements.answerMode, elements.deadline].forEach((element) => {
+    element.addEventListener(eventName, () => {
+      syncEventFromForm();
+      saveWorkingEvent();
+      renderAnswer();
+      renderResults();
+      renderHero();
+    });
+  });
 });
 
 elements.eventForm.addEventListener("submit", async (event) => {
@@ -149,9 +170,7 @@ elements.responseForm.addEventListener("submit", async (event) => {
   saveEventLocal(state.event);
   saveWorkingEvent();
   showToast(savedToDatabase ? "回答をSupabaseに保存しました。" : "回答を保存しました。");
-  const eventParam = savedToDatabase ? `id=${state.event.id}` : `event=${encodeEventForUrl(state.event)}`;
-  history.replaceState(null, "", `#results?${eventParam}`);
-  loadRouteFromHash();
+  renderAll();
 });
 
 document.querySelector("#exportCsvButton").addEventListener("click", () => {
@@ -406,6 +425,10 @@ async function loadRouteFromHash() {
   const params = new URLSearchParams(queryString);
   const encoded = params.get("event");
   const eventId = params.get("id");
+  state.activeRoute = routeName || "admin";
+  state.isSharedAnswerView = state.activeRoute === "answer";
+  renderRoute();
+
   if (eventId) {
     const loadedFromDatabase = await loadEventFromDatabase(eventId);
     const stored = loadEvent(eventId);
@@ -425,10 +448,9 @@ async function loadRouteFromHash() {
   const loadedFromUrl = encoded ? decodeEventFromUrl(encoded) : null;
   const stored = loadedFromUrl?.id ? loadEvent(loadedFromUrl.id) : null;
   if (loadedFromUrl) {
-    state.event = { ...loadedFromUrl, responses: stored?.responses || state.event.responses || [] };
+    state.event = { ...loadedFromUrl, responses: stored?.responses || loadedFromUrl.responses || state.event.responses || [] };
     saveWorkingEvent();
   }
-  state.activeRoute = routeName || "admin";
   renderAll();
 }
 
@@ -475,6 +497,8 @@ function renderRoute() {
   elements.adminView.hidden = route !== "admin";
   elements.answerView.hidden = route !== "answer";
   elements.resultsView.hidden = route !== "results";
+  elements.heroBand.hidden = true;
+  elements.topActions.hidden = state.isSharedAnswerView;
   elements.navLinks.forEach((link) => {
     link.classList.toggle("active", link.dataset.route === route);
   });
@@ -515,6 +539,7 @@ function renderAnswer() {
   elements.answerTitle.textContent = state.event.title || "回答";
   elements.answerDescription.textContent = buildAnswerDescription();
   elements.answerSlotList.innerHTML = "";
+  const currentResponse = state.event.responses.find((response) => response.name === elements.participantName.value.trim());
   if (!state.event.slots.length) {
     elements.answerSlotList.className = "answer-slot-list empty-state";
     elements.answerSlotList.textContent = "候補日時がありません。";
@@ -527,8 +552,8 @@ function renderAnswer() {
     const choices =
       state.event.answerMode === "yesno"
         ? [
-            ["yes", "○"],
-            ["no", "×"],
+            ["yes", "参加"],
+            ["no", "不参加"],
           ]
         : [
             ["yes", "○"],
@@ -545,7 +570,9 @@ function renderAnswer() {
           .map(
             ([value, label], index) => `
               <label>
-                <input type="radio" name="slot-${slot.id}" value="${value}" ${index === 0 ? "checked" : ""}>
+                <input type="radio" name="slot-${slot.id}" value="${value}" ${
+                  (currentResponse?.answers?.[slot.id] || "yes") === value ? "checked" : ""
+                }>
                 <span>${label}</span>
               </label>
             `,
@@ -565,9 +592,7 @@ function renderResults() {
   }
   const ranked = rankSlots(state.event);
   const best = ranked[0];
-  elements.recommendation.textContent = best
-    ? `おすすめ: ${formatDate(best.startsAt)} ${formatTime(best.startsAt)}開始。○が${best.yes}件、△が${best.maybe}件です。`
-    : "まだ回答がありません。";
+  elements.recommendation.textContent = buildRecommendationText(best);
   elements.resultsTable.innerHTML = buildResultsTable(state.event, ranked);
 }
 
@@ -583,6 +608,15 @@ function buildAnswerDescription() {
   if (state.event.description) parts.push(state.event.description);
   if (state.event.deadline) parts.push(`回答期限: ${formatDate(`${state.event.deadline}T00:00`)}`);
   return parts.join(" / ");
+}
+
+function buildRecommendationText(best) {
+  if (!best) return "まだ回答がありません。";
+  const prefix = `おすすめ: ${formatDate(best.startsAt)} ${formatTime(best.startsAt)}開始。`;
+  if (state.event.answerMode === "yesno") {
+    return `${prefix}参加が${best.yes}件、不参加が${best.no}件です。`;
+  }
+  return `${prefix}○が${best.yes}件、△が${best.maybe}件です。`;
 }
 
 function generateSlotsFromPrompt(prompt) {
@@ -780,13 +814,22 @@ function rankSlots(event) {
 
 function buildResultsTable(event, ranked) {
   const responses = event.responses;
+  const aggregateHeaders =
+    event.answerMode === "yesno"
+      ? `
+      <th>参加</th>
+      <th>不参加</th>
+    `
+      : `
+      <th>○</th>
+      <th>△</th>
+      <th>×</th>
+    `;
   const header = `
     <tr>
       <th>候補日時</th>
       <th>スコア</th>
-      <th>○</th>
-      <th>△</th>
-      <th>×</th>
+      ${aggregateHeaders}
       ${responses.map((response) => `<th>${escapeHtml(response.name)}</th>`).join("")}
     </tr>
   `;
@@ -796,10 +839,8 @@ function buildResultsTable(event, ranked) {
         <tr>
           <td>${formatDate(slot.startsAt)} ${formatTime(slot.startsAt)}</td>
           <td><span class="score-pill">${slot.score}</span></td>
-          <td>${slot.yes}</td>
-          <td>${slot.maybe}</td>
-          <td>${slot.no}</td>
-          ${responses.map((response) => `<td>${answerLabel(response.answers[slot.id])}</td>`).join("")}
+          ${buildAggregateCells(event, slot)}
+          ${responses.map((response) => `<td>${answerLabel(response.answers[slot.id], event.answerMode)}</td>`).join("")}
         </tr>
       `,
     )
@@ -809,19 +850,33 @@ function buildResultsTable(event, ranked) {
 
 function buildCsv(event) {
   const responses = event.responses;
-  const header = ["候補日時", "スコア", "○", "△", "×", ...responses.map((response) => response.name)];
+  const aggregateHeader = event.answerMode === "yesno" ? ["参加", "不参加"] : ["○", "△", "×"];
+  const header = ["候補日時", "スコア", ...aggregateHeader, ...responses.map((response) => response.name)];
   const rows = rankSlots(event).map((slot) => [
     `${formatDate(slot.startsAt)} ${formatTime(slot.startsAt)}`,
     slot.score,
-    slot.yes,
-    slot.maybe,
-    slot.no,
-    ...responses.map((response) => answerLabel(response.answers[slot.id])),
+    ...(event.answerMode === "yesno" ? [slot.yes, slot.no] : [slot.yes, slot.maybe, slot.no]),
+    ...responses.map((response) => answerLabel(response.answers[slot.id], event.answerMode)),
   ]);
   return [header, ...rows].map((row) => row.map(csvCell).join(",")).join("\n");
 }
 
-function answerLabel(value) {
+function buildAggregateCells(event, slot) {
+  if (event.answerMode === "yesno") {
+    return `
+      <td>${slot.yes}</td>
+      <td>${slot.no}</td>
+    `;
+  }
+  return `
+    <td>${slot.yes}</td>
+    <td>${slot.maybe}</td>
+    <td>${slot.no}</td>
+  `;
+}
+
+function answerLabel(value, mode = "tri") {
+  if (mode === "yesno") return { yes: "参加", no: "不参加" }[value] || "不参加";
   return { yes: "○", maybe: "△", no: "×" }[value] || "×";
 }
 
