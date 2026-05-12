@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Schedia | 日程調整</title>
-    <link rel="stylesheet" href="./styles.css?v=20260512-2" />
+    <link rel="stylesheet" href="./styles.css?v=20260512-3" />
   </head>
   <body>
     <div class="app-shell">
@@ -69,7 +69,8 @@
                 <textarea id="eventDescription" rows="3" placeholder="参加者に伝えたい補足があれば入力"></textarea>
               </label>
               <label>
-                <span>ChatGPTに伝える候補条件</span>
+                <span>日程生成AI</span>
+                <small class="field-help">文章で希望の日程を入力して「候補を作成」を押すと、自動で候補日時が生成されます。</small>
                 <textarea
                   id="naturalPrompt"
                   rows="4"
@@ -177,7 +178,7 @@
     </div>
 
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
-    <script src="./config.js?v=20260512-2"></script>
-    <script src="./app.js?v=20260512-2"></script>
+    <script src="./config.js?v=20260512-3"></script>
+    <script src="./app.js?v=20260512-3"></script>
   </body>
 </html>

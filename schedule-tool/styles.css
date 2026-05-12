@@ -232,6 +232,13 @@ label {
   font-weight: 700;
 }
 
+.field-help {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.6;
+}
+
 input,
 textarea,
 select {
