@@ -295,6 +295,17 @@ button {
   font-weight: 800;
 }
 
+.primary-link {
+  display: inline-grid;
+  min-height: 42px;
+  place-items: center;
+  border-radius: 8px;
+  background: var(--primary);
+  color: white;
+  padding: 0 18px;
+  font-weight: 800;
+}
+
 .ghost-button {
   background: transparent;
 }
@@ -406,6 +417,20 @@ button {
   background: #fbfcfd;
 }
 
+.response-complete {
+  display: grid;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.response-complete span {
+  color: var(--muted);
+}
+
+.response-complete .primary-link {
+  width: fit-content;
+}
+
 .choice-group {
   display: inline-flex;
   gap: 6px;
@@ -481,6 +506,23 @@ th {
   background: var(--soft);
   color: var(--primary-strong);
   font-weight: 900;
+}
+
+.notes-table {
+  margin-top: 24px;
+}
+
+.notes-table h3 {
+  margin: 0 0 8px;
+}
+
+.notes-table table {
+  min-width: 520px;
+}
+
+.notes-table td:last-child {
+  white-space: normal;
+  line-height: 1.6;
 }
 
 .modal-backdrop {

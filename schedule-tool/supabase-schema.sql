@@ -21,9 +21,13 @@ create table if not exists public.schedule_responses (
   id uuid primary key default gen_random_uuid(),
   event_id uuid not null references public.schedule_events(id) on delete cascade,
   name text not null,
+  note text default '',
   submitted_at timestamptz not null default now(),
   unique (event_id, name)
 );
+
+alter table public.schedule_responses
+  add column if not exists note text default '';
 
 create table if not exists public.schedule_answers (
   response_id uuid not null references public.schedule_responses(id) on delete cascade,

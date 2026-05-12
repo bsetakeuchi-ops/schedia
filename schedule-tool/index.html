@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Schedia | 日程調整</title>
-    <link rel="stylesheet" href="./styles.css?v=20260512-1" />
+    <link rel="stylesheet" href="./styles.css?v=20260512-2" />
   </head>
   <body>
     <div class="app-shell">
@@ -89,13 +89,7 @@
               </div>
 
               <div class="option-grid">
-                <label>
-                  <span>回答方式</span>
-                  <select id="answerMode">
-                    <option value="tri">○ / △ / ×</option>
-                    <option value="yesno">参加可 / 不可</option>
-                  </select>
-                </label>
+                <input id="answerMode" type="hidden" value="tri" />
                 <label>
                   <span>回答期限</span>
                   <input id="deadline" type="date" />
@@ -136,8 +130,17 @@
               <input id="participantName" type="text" placeholder="例: 佐藤" required />
             </label>
             <div id="answerSlotList" class="answer-slot-list"></div>
+            <label>
+              <span>メモ</span>
+              <textarea id="responseNote" rows="3" placeholder="任意: 補足や都合があれば入力"></textarea>
+            </label>
             <button type="submit" class="primary-button wide">回答を送信</button>
           </form>
+          <div class="panel response-complete" id="responseComplete" hidden>
+            <strong>回答を保存しました。</strong>
+            <span>このまま集計結果を確認できます。</span>
+            <a class="primary-link" id="viewResultsLink" href="#results">結果を見る</a>
+          </div>
         </section>
 
         <section id="resultsView" class="view" hidden>
@@ -174,7 +177,7 @@
     </div>
 
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
-    <script src="./config.js?v=20260512-1"></script>
-    <script src="./app.js?v=20260512-1"></script>
+    <script src="./config.js?v=20260512-2"></script>
+    <script src="./app.js?v=20260512-2"></script>
   </body>
 </html>
